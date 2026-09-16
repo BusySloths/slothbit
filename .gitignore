@@ -1,0 +1,22 @@
+# Python and tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+.tools/
+dist/
+build/
+*.egg-info/
+
+# Models, generated results, and local configuration
+models/
+results/
+.env
+*.gguf
+*.safetensors
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
