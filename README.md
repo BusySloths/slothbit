@@ -65,6 +65,39 @@ For CPU-only inference, keep GPU layers at `0`. For a compatible GPU build,
 increase it experimentally; `99` is a convenient request to offload all
 possible layers.
 
+## Model catalog
+
+“1-bit” is sometimes used loosely. Binary models generally use two weight
+values such as `{-1, +1}`. BitNet b1.58 and other ternary models use
+`{-1, 0, +1}`—three states carrying about 1.58 bits of information per
+weight. A conventional model quantized to a 2-bit file after training is not
+necessarily a native ternary model.
+
+| Model family | Sizes | Weight type | Runtime | N150 suitability |
+| --- | ---: | --- | --- | --- |
+| [PrismML Bonsai](https://huggingface.co/prism-ml/models) | 1.7B, 4B, 8B, 27B | Binary / 1-bit | `llama.cpp` | 1.7B–8B recommended |
+| [PrismML Ternary Bonsai](https://huggingface.co/collections/prism-ml/ternary-bonsai) | 1.7B, 4B, 8B, 27B | Ternary / 1.58-bit | `llama.cpp` | 1.7B–8B recommended |
+| [Microsoft BitNet b1.58 2B-4T](https://huggingface.co/microsoft/bitnet-b1.58-2B-4T) | 2.4B | Native ternary | `bitnet.cpp` | Recommended baseline |
+| [Falcon3 1.58-bit](https://huggingface.co/collections/tiiuae/falcon3) | 1B, 3B, 7B, 10B | Ternary | `bitnet.cpp` | 1B–3B recommended |
+| [1bitLLM BitNet](https://huggingface.co/1bitLLM) | 0.7B, 3.3B | Ternary research models | `bitnet.cpp` | Good kernel baselines |
+| [Llama3-8B-1.58-100B-tokens](https://huggingface.co/HF1BitLLM/Llama3-8B-1.58-100B-tokens) | 8B | Experimental ternary | `bitnet.cpp` | Usable, but slow |
+| [TriLM 3.9B](https://huggingface.co/Green-Sky/TriLM_3.9B-GGUF) | 3.9B | Native ternary research model | GGUF / community tooling | Experimental |
+
+The current SlothBit adapter supports the PrismML GGUF families. Microsoft
+BitNet, Falcon, and older research checkpoints require the planned
+`bitnet.cpp` backend. The 27B models are included for completeness but are not
+practical on the current four-core Intel N150 test machine.
+
+Switch between compatible Bonsai models without modifying source code:
+
+```console
+SLOTHBIT_MODEL=prism-ml/Bonsai-1.7B-gguf:Q1_0 \
+  uv run slothbit infer "Explain binary weights."
+
+SLOTHBIT_MODEL=prism-ml/Bonsai-4B-gguf:Q1_0 \
+  uv run slothbit infer "Explain binary weights."
+```
+
 ## Development
 
 ```console
