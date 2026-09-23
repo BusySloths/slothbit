@@ -52,6 +52,7 @@ def build_cli_command(settings: Settings, prompt: str, predict: int = 256) -> li
         str(settings.context_size),
         "--n-predict",
         str(predict),
+        "--single-turn",
         "--prompt",
         prompt,
     ]

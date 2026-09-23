@@ -19,8 +19,8 @@ from .llama import (
 
 
 def parser() -> argparse.ArgumentParser:
-    root = argparse.ArgumentParser(description=__doc__)
-    commands = root.add_subparsers(dest="command", required=True)
+    root = argparse.ArgumentParser(prog="slothbit", description=__doc__)
+    commands = root.add_subparsers(dest="command")
 
     commands.add_parser("doctor", help="check local inference prerequisites")
 
@@ -50,7 +50,11 @@ def doctor() -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = parser().parse_args(argv)
+    argument_parser = parser()
+    args = argument_parser.parse_args(argv)
+    if args.command is None:
+        argument_parser.print_help()
+        return 0
     if args.command == "doctor":
         return doctor()
 

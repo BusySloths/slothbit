@@ -26,6 +26,7 @@ def test_cli_command(monkeypatch):
     command = build_cli_command(settings, "hello", predict=32)
 
     assert command[:3] == ["/bin/llama-cli", "-hf", settings.model]
+    assert "--single-turn" in command
     assert command[-4:] == ["--threads", "8", "--n-gpu-layers", "10"]
 
 
