@@ -1,0 +1,29 @@
+version: '3'
+
+vars:
+  CONTEXT_SIZE: '{{.CONTEXT_SIZE | default "4096"}}'
+  MODEL: 'prism-ml/Ternary-Bonsai-27B-gguf:PQ2_0'
+
+tasks:
+  install-llama:
+    desc: Build the pinned PrismML llama.cpp fork with native Metal support
+    cmds:
+      - ./scripts/install-llama.sh
+
+  run-27b:
+    desc: Start the 27B ternary OpenAI-compatible server
+    env:
+      SLOTHBIT_CONTEXT_SIZE: '{{.CONTEXT_SIZE}}'
+      SLOTHBIT_MODEL: '{{.MODEL}}'
+    cmds:
+      - uv run slothbit serve
+
+  infer-27b:
+    desc: Run one prompt with the 27B ternary model
+    requires:
+      vars: [PROMPT]
+    env:
+      SLOTHBIT_CONTEXT_SIZE: '{{.CONTEXT_SIZE}}'
+      SLOTHBIT_MODEL: '{{.MODEL}}'
+    cmds:
+      - uv run slothbit infer '{{.PROMPT}}'

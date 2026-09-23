@@ -16,8 +16,8 @@ or macOS.
 
 - Python 3.11 or newer
 - [uv](https://docs.astral.sh/uv/)
-- A recent [llama.cpp](https://github.com/ggml-org/llama.cpp) build providing
-  `llama-cli` and `llama-server`
+- [Task](https://taskfile.dev/) for the reproducible commands below
+- CMake, Ninja, and Xcode Command Line Tools (for the native macOS build)
 - Roughly 2 GB of free disk space for the model/cache and enough RAM for its
   1.16 GB GGUF plus runtime state
 
@@ -46,61 +46,44 @@ curl http://127.0.0.1:8080/v1/chat/completions \
   -d '{"messages":[{"role":"user","content":"Hello!"}]}'
 ```
 
-## Docker: 27B ternary on an M1 Pro
+## Native macOS: 27B ternary on an M1 Pro
 
-The included image packages SlothBit and a pinned build of PrismML's
-`llama.cpp` fork. It defaults to the 7.17 GB
-`prism-ml/Ternary-Bonsai-27B-gguf:PQ2_0` model and a conservative 4096-token
-context, which has an expected peak memory use of roughly 8.4 GB.
+Docker is intentionally not part of this workflow: Docker Desktop cannot use
+Apple's Metal backend and adds VM memory overhead. The native installer builds
+the PrismML `llama.cpp` fork at the pinned revision whose `PQ2_0` kernels
+support the 27B ternary model.
 
-> [!IMPORTANT]
-> Docker Desktop runs Linux in a virtual machine and cannot expose Apple's
-> Metal GPU backend to this container. The image therefore uses the Arm CPU.
-> It provides a reproducible installation, but native macOS `llama.cpp` or MLX
-> will be substantially faster because those can use Metal directly.
-
-In Docker Desktop, allocate at least 12 GB of memory to the Linux VM. Keep
-roughly 10 GB of disk space free for the model and cache. Then build the
-native ARM64 image:
+Install the prerequisites (Xcode Command Line Tools, CMake, Ninja, and `uv`),
+then run:
 
 ```console
-docker build --platform linux/arm64 -t slothbit:ternary-27b .
-docker volume create slothbit-models
+uv sync
+task install-llama
 ```
 
-Run a one-shot prompt. The first run downloads the model into the named volume;
-later runs reuse it:
+Start the OpenAI-compatible 27B server with a 4096-token context (the default):
 
 ```console
-docker run --rm -it \
-  --platform linux/arm64 \
-  --memory 11g \
-  -v slothbit-models:/models \
-  slothbit:ternary-27b \
-  infer "Explain why ternary weights are memory efficient."
+task run-27b
 ```
 
-Start the OpenAI-compatible server with the same cache:
+Choose another context window without editing files:
 
 ```console
-docker run --rm \
-  --platform linux/arm64 \
-  --memory 11g \
-  -p 8080:8080 \
-  -v slothbit-models:/models \
-  slothbit:ternary-27b serve
+task run-27b CONTEXT_SIZE=8192
 ```
 
-Open <http://127.0.0.1:8080> or send requests to
-`http://127.0.0.1:8080/v1/chat/completions`. The image intentionally omits the
-optional vision tower and speculative-decoding model to stay within a 16 GB
-machine's memory budget. Override any normal SlothBit setting with `docker
-run -e`, for example `-e SLOTHBIT_CONTEXT_SIZE=8192` if more context is worth
-the additional memory.
+Run a one-shot prompt instead:
 
-The Docker build pins PrismML's fork because its `PQ2_0` kernels understand
-the preferred group-128 ternary format. Stock `llama.cpp` requires the larger
-group-64 `Q2_g64` file instead.
+```console
+task infer-27b CONTEXT_SIZE=4096 \
+  PROMPT='Explain why ternary weights are memory efficient.'
+```
+
+The model is downloaded by `llama.cpp` into its normal Hugging Face cache on
+first use. The 27B `PQ2_0` weights are about 7.17 GB; leave additional memory
+for the runtime and context. Requests go to
+`http://127.0.0.1:8080/v1/chat/completions` when the server is running.
 
 ## Configuration
 
